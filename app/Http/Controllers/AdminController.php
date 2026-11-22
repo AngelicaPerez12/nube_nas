@@ -76,4 +76,22 @@ class AdminController extends Controller
 
         return back()->with('success', "Permisos actualizados para {$user->name}.");
     }
+
+    public function eliminarUsuario(User $user)
+    {
+        if (auth()->id() === $user->id) {
+            return back()->withErrors(['error' => 'No puedes eliminar tu propia cuenta de administrador.']);
+        }
+
+        $carpetaPrivada = 'privado/' . $user->name;
+
+        if (Storage::disk('nas')->exists($carpetaPrivada)) {
+            Storage::disk('nas')->deleteDirectory($carpetaPrivada);
+        }
+
+        $nombre = $user->name;
+        $user->delete();
+
+        return back()->with('success', "Usuario '{$nombre}' eliminado correctamente.");
+    }
 }

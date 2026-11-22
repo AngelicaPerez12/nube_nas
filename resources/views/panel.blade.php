@@ -119,7 +119,7 @@
                 <!-- Formulario para subir archivos (visible solo si tiene permiso de escritura) -->
                 @if ($puedeEscribir)
                     <div class="bg-light p-3 p-md-4 rounded-3 border mb-4">
-                        <form action="{{ route('archivos.subir') }}" method="POST" enctype="multipart/form-data">
+                        <form id="formSubida" action="{{ route('archivos.subir') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <input type="hidden" name="carpeta" value="{{ $carpeta }}">
                             <input type="hidden" name="espacio" value="{{ $espacio }}">
@@ -129,7 +129,7 @@
                             </label>
                             <div class="input-group">
                                 <input type="file" class="form-control" id="archivo" name="archivo" required>
-                                <button class="btn btn-primary px-4" type="submit">
+                                <button id="btnSubir" class="btn btn-primary px-4" type="submit">
                                     <i class="bi bi-upload me-1"></i> Subir
                                 </button>
                             </div>
@@ -229,5 +229,41 @@
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script para evitar ERR_UPLOAD_FILE_CHANGED en navegadores Android -->
+    <script>
+        document.getElementById('formSubida')?.addEventListener('submit', async function (e) {
+            const input = document.getElementById('archivo');
+            const btn = document.getElementById('btnSubir');
+            if (!input || !input.files.length) return;
+
+            e.preventDefault();
+
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Subiendo...';
+
+            try {
+                const file = input.files[0];
+                const buffer = await file.arrayBuffer();
+                const blob = new Blob([buffer], { type: file.type || 'application/octet-stream' });
+
+                const formData = new FormData(this);
+                formData.set('archivo', blob, file.name);
+
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                });
+
+                window.location.href = response.url || window.location.href;
+            } catch (error) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                alert('No se pudo completar la subida. Verifica tu conexión e intenta de nuevo.');
+            }
+        });
+    </script>
 </body>
 </html>

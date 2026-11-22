@@ -39,4 +39,5 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/grupos', [AdminController::class, 'crearGrupo'])->name('grupos.crear');
     Route::post('/usuarios', [AdminController::class, 'crearUsuario'])->name('usuarios.crear');
     Route::put('/usuarios/{user}', [AdminController::class, 'actualizarUsuario'])->name('usuarios.actualizar');
+    Route::delete('/usuarios/{user}', [AdminController::class, 'eliminarUsuario'])->name('usuarios.eliminar');
 });
