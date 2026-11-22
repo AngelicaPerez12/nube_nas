@@ -18,14 +18,13 @@ class AuthController extends Controller
     public function registrar(Request $request)
     {
         $datos = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::min(12)],
+            'name' => ['required', 'string', 'max:255', 'unique:users,name'],
+            'password' => ['required', 'confirmed', Password::min(5)],
         ]);
 
         $usuario = User::create([
             'name' => $datos['name'],
-            'email' => $datos['email'],
+            'email' => $datos['name'] . '@nube.local',
             'password' => Hash::make($datos['password']),
         ]);
 
@@ -43,7 +42,7 @@ class AuthController extends Controller
     public function ingresar(Request $request)
     {
         $datos = $request->validate([
-            'email' => ['required', 'email'],
+            'name' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
@@ -54,8 +53,8 @@ class AuthController extends Controller
         }
 
         return back()
-            ->withErrors(['email' => 'Credenciales incorrectas.'])
-            ->onlyInput('email');
+            ->withErrors(['name' => 'Credenciales incorrectas.'])
+            ->onlyInput('name');
     }
 
     public function salir(Request $request)
