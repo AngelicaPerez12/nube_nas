@@ -153,47 +153,64 @@
                                 <th>Permiso en Grupo</th>
                                 <th>Admin</th>
                                 <th>Guardar</th>
+                                <th>Eliminar</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($usuarios as $u)
                                 <tr>
-                                    <form action="{{ route('admin.usuarios.actualizar', $u) }}" method="POST">
-                                        @csrf
-                                        @method('PUT')
-                                        <td class="fw-semibold">{{ $u->name }}</td>
-                                        <td>
-                                            @if($u->is_admin)
-                                                <span class="badge bg-dark">Admin</span>
-                                            @else
-                                                <span class="badge bg-secondary">Usuario</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <select name="grupo_id" class="form-select form-select-sm">
-                                                <option value="">-- Sin grupo --</option>
-                                                @foreach($grupos as $g)
-                                                    <option value="{{ $g->id }}" @selected($u->grupo_id === $g->id)>
-                                                        {{ $g->nombre }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <select name="permiso" class="form-select form-select-sm">
-                                                <option value="lectura" @selected($u->permiso === 'lectura')>Solo lectura</option>
-                                                <option value="escritura" @selected($u->permiso === 'escritura')>Lectura / Escritura</option>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <input type="checkbox" class="form-check-input" name="is_admin" value="1" @checked($u->is_admin)>
-                                        </td>
-                                        <td>
-                                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                    <td class="fw-semibold">{{ $u->name }}</td>
+                                    <td>
+                                        @if($u->is_admin)
+                                            <span class="badge bg-dark">Admin</span>
+                                        @else
+                                            <span class="badge bg-secondary">Usuario</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <select name="grupo_id" form="form-update-{{ $u->id }}" class="form-select form-select-sm">
+                                            <option value="">-- Sin grupo --</option>
+                                            @foreach($grupos as $g)
+                                                <option value="{{ $g->id }}" @selected($u->grupo_id === $g->id)>
+                                                    {{ $g->nombre }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select name="permiso" form="form-update-{{ $u->id }}" class="form-select form-select-sm">
+                                            <option value="lectura" @selected($u->permiso === 'lectura')>Solo lectura</option>
+                                            <option value="escritura" @selected($u->permiso === 'escritura')>Lectura / Escritura</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="checkbox" form="form-update-{{ $u->id }}" class="form-check-input" name="is_admin" value="1" @checked($u->is_admin)>
+                                    </td>
+                                    <td>
+                                        <form id="form-update-{{ $u->id }}" action="{{ route('admin.usuarios.actualizar', $u) }}" method="POST" class="m-0">
+                                            @csrf
+                                            @method('PUT')
+                                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Guardar cambios">
                                                 <i class="bi bi-save"></i>
                                             </button>
-                                        </td>
-                                    </form>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        @if(auth()->id() !== $u->id)
+                                            <form action="{{ route('admin.usuarios.eliminar', $u) }}"
+                                                  method="POST"
+                                                  onsubmit="return confirm('¿Seguro que deseas eliminar al usuario {{ addslashes($u->name) }} y sus archivos privados?');"
+                                                  class="m-0">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar usuario">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span class="badge bg-secondary">Actual</span>
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
