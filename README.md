@@ -1,58 +1,85 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ☁️ Nube NAS Personal en Línea
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Universidad de El Salvador**  
+**Facultad Multidisciplinaria Oriental (FMO)**  
 
-## About Laravel
+### 👥 Autores
+* **Angélica Amaya**
+* **Cristian Ventura**
+* **Luis Galeas**
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 📋 Descripción del Proyecto
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Sistema de almacenamiento en red (**NAS**) autohospedado sobre **Raspberry Pi 5** con **OpenMediaVault**, diseñado como una nube privada accesible desde cualquier lugar del mundo mediante **Tailscale Funnel**.
 
-## Learning Laravel
+El sistema proporciona una interfaz web personalizada inspirada en Google Drive que permite a usuarios autenticados gestionar sus archivos privados y compartidos por departamentos, garantizando el aislamiento estricto de datos y el control de permisos por rol.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 🌐 Acceso a la Plataforma
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+* **Enlace Público (HTTPS):** `https://raspberry-nas.tail5a60a6.ts.net`
+* **Disponibilidad:** Accesible desde cualquier navegador web (escritorio o dispositivos móviles) y desde redes externas sin necesidad de instalar clientes VPN en el equipo usuario ni exponer puertos en el enrutador local.
 
-## Agentic Development
+---
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## ✨ Funcionalidades Principales
 
-```bash
-composer require laravel/boost --dev
+### 👤 Módulo de Usuarios
+* **Autenticación Segura:** Registro e inicio de sesión con cifrado de contraseñas mediante Bcrypt.
+* **Unidad Privada:** Espacio de almacenamiento exclusivo (`usuario_<id>`) donde únicamente el propietario puede visualizar, cargar, descargar y eliminar sus documentos.
+* **Espacios Colaborativos por Grupo:** Acceso controlado a la carpeta compartida del departamento asignado por un administrador.
+* **Control Granular de Permisos:** Aplicación estricta de niveles de acceso (**Solo lectura** vs. **Lectura y escritura**) tanto en la interfaz como en la capa de servidor.
 
-php artisan boost:install
-```
+### 🛡️ Módulo de Administración
+* **Gestión de Departamentos (Grupos):** Creación de grupos de trabajo que generan automáticamente su directorio físico dentro del almacenamiento NAS.
+* **Administración de Cuentas y Roles:** Asignación de usuarios a departamentos, configuración de permisos de lectura/escritura, promoción de administradores y eliminación de cuentas junto con su almacenamiento asociado.
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## 🛠️ Arquitectura y Stack Tecnológico
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Capa del Sistema | Tecnología | Responsabilidad |
+| :--- | :--- | :--- |
+| **Hardware** | Raspberry Pi 5 + Almacenamiento externo | Servidor físico centralizado de bajo consumo energético. |
+| **Almacenamiento NAS** | OpenMediaVault (OMV) | Administración del sistema de archivos físico y puntos de montaje. |
+| **Backend (MVC)** | PHP / Laravel | Enrutamiento, middlewares de seguridad, aislamiento de rutas y operaciones de archivo. |
+| **Base de Datos** | SQLite | Persistencia relacional ligera de usuarios, roles, grupos y permisos. |
+| **Frontend** | Blade + Bootstrap 5 + JavaScript (`fetch`) | Interfaz responsiva y transferencia segura de archivos en memoria desde escritorio y móvil. |
+| **Acceso Remoto** | Tailscale Funnel | Túnel inverso cifrado con certificado SSL/TLS automático hacia Internet. |
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 📂 Estructura del Código Fuente
 
-## Security Vulnerabilities
+```text
+nube_nas/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── AdminController.php      # Gestión administrativa de grupos, usuarios y permisos
+│   │   │   ├── ArchivoController.php    # Carga, descarga, listado y eliminación en el NAS
+│   │   │   └── AuthController.php       # Registro, autenticación y cierre de sesión
+│   │   └── Middleware/
+│   │       └── EsAdmin.php              # Control de acceso para rutas administrativas
+│   └── Models/
+│       ├── Grupo.php                    # Modelo de departamentos y relación con usuarios
+│       └── User.php                     # Modelo de usuarios, roles y permisos
+├── database/
+│   ├── migrations/                      # Definición estructural de tablas (users, grupos, permisos)
+│   └── database.sqlite                  # Base de datos del sistema
+├── resources/views/
+│   ├── admin/index.blade.php            # Panel de administración
+│   ├── auth/                            # Vistas de inicio de sesión y registro
+│   ├── inicio.blade.php                 # Portada pública del sistema
+│   └── panel.blade.php                  # Explorador y gestor de archivos web
+└── routes/
+    └── web.php                          # Definición de rutas HTTP y middlewares de seguridad
+🔒 Mecanismos de Seguridad
+Aislamiento de Directorios (Prevención de Path Traversal): El servidor construye internamente las rutas de destino a partir de la sesión autenticada (auth()->user()), sanitizando los nombres de archivo e impidiendo el acceso a directorios fuera del ámbito autorizado.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Validación en Backend: Toda operación de escritura o borrado verifica en la base de datos que el usuario disponga del permiso escritura antes de ejecutar cambios sobre el disco físico.
 
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Cifrado de Extremo a Extremo: Todo el tráfico web y las cookies de sesión viajan protegidos bajo protocolo HTTPS mediante Tailscale Funnel.
