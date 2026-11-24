@@ -18,11 +18,11 @@ class ArchivoController extends Controller
             $puedeEscribir = $usuario->permiso === 'escritura';
         } else {
             $espacio = 'privado';
-            $raiz = 'usuario_' . $usuario->id;
+            $raiz = 'usuario_'.$usuario->id;
             $puedeEscribir = true;
         }
 
-        if (!Storage::disk('nas')->exists($raiz)) {
+        if (! Storage::disk('nas')->exists($raiz)) {
             Storage::disk('nas')->makeDirectory($raiz);
         }
 
@@ -49,6 +49,29 @@ class ArchivoController extends Controller
         }
     }
 
+    /**
+     * Retorna el icono y color de Bootstrap según la extensión del archivo.
+     *
+     * @return array{icono: string, color: string}
+     */
+    private function obtenerIconoArchivo(string $extension): array
+    {
+        return match ($extension) {
+            'pdf' => ['icono' => 'bi-file-earmark-pdf-fill', 'color' => 'text-danger'],
+            'doc', 'docx', 'odt', 'rtf' => ['icono' => 'bi-file-earmark-word-fill', 'color' => 'text-primary'],
+            'xls', 'xlsx', 'csv', 'ods' => ['icono' => 'bi-file-earmark-excel-fill', 'color' => 'text-success'],
+            'ppt', 'pptx', 'odp' => ['icono' => 'bi-file-earmark-ppt-fill', 'color' => 'text-warning'],
+            'jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp', 'ico' => ['icono' => 'bi-file-earmark-image-fill', 'color' => 'text-info'],
+            'mp4', 'mkv', 'avi', 'mov', 'wmv', 'webm', 'flv' => ['icono' => 'bi-file-earmark-play-fill', 'color' => 'text-danger'],
+            'mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac' => ['icono' => 'bi-file-earmark-music-fill', 'color' => 'text-primary'],
+            'zip', 'rar', '7z', 'tar', 'gz', 'bz2' => ['icono' => 'bi-file-earmark-zip-fill', 'color' => 'text-secondary'],
+            'txt', 'log', 'md' => ['icono' => 'bi-file-earmark-text-fill', 'color' => 'text-secondary'],
+            'php', 'js', 'ts', 'html', 'css', 'json', 'xml', 'py', 'sh', 'sql', 'c', 'cpp', 'java', 'cs' => ['icono' => 'bi-file-earmark-code-fill', 'color' => 'text-dark'],
+            'exe', 'msi', 'apk', 'deb', 'iso' => ['icono' => 'bi-file-earmark-binary-fill', 'color' => 'text-secondary'],
+            default => ['icono' => 'bi-file-earmark-fill', 'color' => 'text-secondary'],
+        };
+    }
+
     public function index(Request $request)
     {
         $espacioSolicitado = $request->query('espacio', 'privado');
@@ -65,7 +88,7 @@ class ArchivoController extends Controller
             $anterior = implode('/', $segmentos);
         }
 
-        $rutaCompleta = $carpeta === '' ? $raiz : $raiz . '/' . $carpeta;
+        $rutaCompleta = $carpeta === '' ? $raiz : $raiz.'/'.$carpeta;
 
         try {
             $archivos = [];
@@ -75,16 +98,19 @@ class ArchivoController extends Controller
                 $archivos[] = [
                     'nombre' => $nombre,
                     'tipo' => 'carpeta',
-                    'ruta' => ltrim($carpeta . '/' . $nombre, '/'),
+                    'ruta' => ltrim($carpeta.'/'.$nombre, '/'),
                 ];
             }
 
             foreach (Storage::disk('nas')->files($rutaCompleta) as $file) {
                 $nombre = basename($file);
+                $extension = strtolower(pathinfo($nombre, PATHINFO_EXTENSION));
                 $archivos[] = [
                     'nombre' => $nombre,
                     'tipo' => 'archivo',
-                    'ruta' => ltrim($carpeta . '/' . $nombre, '/'),
+                    'ruta' => ltrim($carpeta.'/'.$nombre, '/'),
+                    'extension' => $extension,
+                    'icono' => $this->obtenerIconoArchivo($extension),
                 ];
             }
 
@@ -110,6 +136,8 @@ class ArchivoController extends Controller
             'archivo' => ['required', 'file', 'max:51200'],
             'carpeta' => ['nullable', 'string', 'max:2048'],
             'espacio' => ['nullable', 'in:privado,grupo'],
+        ], [
+            'archivo.max' => 'El archivo supera el tamaño máximo permitido de 50 MB por archivo.',
         ]);
 
         [$espacio, $raiz, $puedeEscribir] = $this->resolverEspacio($request, $datos['espacio'] ?? 'privado');
@@ -119,10 +147,24 @@ class ArchivoController extends Controller
         $this->validarRutaRelativa($carpeta);
 
         $destino = route('panel', ['espacio' => $espacio, 'carpeta' => $carpeta]);
-        $rutaCarpeta = $carpeta === '' ? $raiz : $raiz . '/' . $carpeta;
+        $rutaCarpeta = $carpeta === '' ? $raiz : $raiz.'/'.$carpeta;
 
         try {
             $archivo = $request->file('archivo');
+
+            if ($espacio === 'privado') {
+                $usuario = $request->user();
+                $nuevoTamano = $archivo->getSize();
+                $espacioUsado = $usuario->espacioUsadoBytes();
+                $limite = $usuario->limiteEspacioBytes();
+
+                if (($espacioUsado + $nuevoTamano) > $limite) {
+                    return redirect($destino)->withErrors([
+                        'archivo' => 'No tienes suficiente espacio disponible. Límite: '.$usuario->limiteEspacioTexto().' (en uso: '.$usuario->espacioUsadoTexto().').',
+                    ]);
+                }
+            }
+
             $nombreOriginal = basename($archivo->getClientOriginalName());
 
             abort_if(
@@ -133,7 +175,7 @@ class ArchivoController extends Controller
                 400
             );
 
-            $rutaFinal = $rutaCarpeta . '/' . $nombreOriginal;
+            $rutaFinal = $rutaCarpeta.'/'.$nombreOriginal;
 
             if (Storage::disk('nas')->exists($rutaFinal)) {
                 return redirect($destino)->withErrors([
@@ -159,7 +201,7 @@ class ArchivoController extends Controller
         abort_unless(is_string($rutaArchivo) && $rutaArchivo !== '', 400);
         $this->validarRutaRelativa($rutaArchivo);
 
-        $rutaCompleta = $raiz . '/' . $rutaArchivo;
+        $rutaCompleta = $raiz.'/'.$rutaArchivo;
         abort_unless(Storage::disk('nas')->exists($rutaCompleta), 404);
 
         $nombre = basename($rutaArchivo);
@@ -183,11 +225,12 @@ class ArchivoController extends Controller
         $rutaArchivo = $datos['archivo'];
         $this->validarRutaRelativa($rutaArchivo);
 
-        $rutaCompleta = $raiz . '/' . $rutaArchivo;
+        $rutaCompleta = $raiz.'/'.$rutaArchivo;
 
         if (Storage::disk('nas')->exists($rutaCompleta)) {
             Storage::disk('nas')->delete($rutaCompleta);
-            return back()->with('success', 'Archivo eliminado correctamente.');
+
+            return back()->with('eliminado', 'Archivo eliminado correctamente.');
         }
 
         return back()->withErrors([

@@ -26,7 +26,7 @@
                                 <i class="bi bi-cloud-fill"></i> Mi Nube
                             </a>
                             <h1 class="h4 fw-bold text-dark mb-1">Crear cuenta</h1>
-                            <p class="text-muted small mb-0">Regístrate para obtener tu espacio privado</p>
+                            <p class="text-muted small mb-0">Regístrate para obtener tu espacio privado de 1 GB</p>
                         </div>
 
                         @if ($errors->any())
@@ -68,6 +68,9 @@
                                            minlength="5"
                                            placeholder="Mínimo 5 caracteres"
                                            required>
+                                    <button class="btn btn-outline-secondary toggle-password" type="button" data-target="password" title="Mostrar/ocultar contraseña">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
                                 </div>
                             </div>
 
@@ -82,6 +85,9 @@
                                            minlength="5"
                                            placeholder="Repite tu contraseña"
                                            required>
+                                    <button class="btn btn-outline-secondary toggle-password" type="button" data-target="password_confirmation" title="Mostrar/ocultar contraseña">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
                                 </div>
                             </div>
 
@@ -103,5 +109,20 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', () => {
+                const target = document.getElementById(button.getAttribute('data-target'));
+                if (target) {
+                    const isPassword = target.type === 'password';
+                    target.type = isPassword ? 'text' : 'password';
+                    const icon = button.querySelector('i');
+                    if (icon) {
+                        icon.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

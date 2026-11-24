@@ -1,9 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ArchivoController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ArchivoController;
+use App\Http\Controllers\AuthController;
+use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'inicio')->name('inicio');
 
@@ -24,6 +24,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/archivos/subir', [ArchivoController::class, 'subir'])
         ->middleware('throttle:10,1')
         ->name('archivos.subir');
+    Route::get('/archivos/subir', fn () => redirect()->route('panel'));
 
     Route::get('/archivos/descargar', [ArchivoController::class, 'descargar'])
         ->middleware('throttle:30,1')

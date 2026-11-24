@@ -25,14 +25,14 @@ class AdminController extends Controller
             'nombre' => ['required', 'string', 'max:60', 'unique:grupos,nombre'],
         ]);
 
-        $carpeta = 'grupo_' . Str::slug($datos['nombre'], '_');
+        $carpeta = 'grupo_'.Str::slug($datos['nombre'], '_');
 
         Grupo::create([
             'nombre' => $datos['nombre'],
             'carpeta' => $carpeta,
         ]);
 
-        if (!Storage::disk('nas')->exists($carpeta)) {
+        if (! Storage::disk('nas')->exists($carpeta)) {
             Storage::disk('nas')->makeDirectory($carpeta);
         }
 
@@ -83,7 +83,7 @@ class AdminController extends Controller
             return back()->withErrors(['error' => 'No puedes eliminar tu propia cuenta de administrador.']);
         }
 
-        $carpetaPrivada = 'privado/' . $user->name;
+        $carpetaPrivada = 'privado/'.$user->name;
 
         if (Storage::disk('nas')->exists($carpetaPrivada)) {
             Storage::disk('nas')->deleteDirectory($carpetaPrivada);

@@ -35,9 +35,9 @@ return [
         ],
     ],
     'owncloud' => [
-    'url' => env('OWNCLOUD_URL'),
-    'test_username' => env('OWNCLOUD_TEST_USERNAME'),
-    'test_app_password' => env('OWNCLOUD_TEST_APP_PASSWORD'),
-],  
+        'url' => env('OWNCLOUD_URL'),
+        'test_username' => env('OWNCLOUD_TEST_USERNAME'),
+        'test_app_password' => env('OWNCLOUD_TEST_APP_PASSWORD'),
+    ],
 
 ];

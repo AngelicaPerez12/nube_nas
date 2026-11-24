@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Validation\Rule;
 
 class OwnCloudConnectionController extends Controller
@@ -39,8 +39,8 @@ class OwnCloudConnectionController extends Controller
         $nombre = $datos['owncloud_username'];
 
         $url = rtrim(config('services.owncloud.url'), '/')
-            . '/remote.php/dav/files/'
-            . rawurlencode($nombre) . '/';
+            .'/remote.php/dav/files/'
+            .rawurlencode($nombre).'/';
 
         try {
             $respuesta = Http::timeout(15)

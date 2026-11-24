@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 
 class OwnCloudService
@@ -15,7 +16,7 @@ class OwnCloudService
 
         $respuesta = Http::timeout(10)
             ->withoutRedirecting()
-            ->get($url . '/status.php');
+            ->get($url.'/status.php');
 
         return [
             'http_status' => $respuesta->status(),
@@ -27,11 +28,11 @@ class OwnCloudService
     {
         $url = rtrim(config('services.owncloud.url'), '/');
 
-        $respuesta = \Illuminate\Support\Facades\Http::timeout(10)
+        $respuesta = Http::timeout(10)
             ->withHeaders([
                 'Depth' => '0',
             ])
-            ->send('PROPFIND', $url . '/remote.php/dav/files/');
+            ->send('PROPFIND', $url.'/remote.php/dav/files/');
 
         return [
             'http_status' => $respuesta->status(),
@@ -46,11 +47,11 @@ class OwnCloudService
         $usuario = config('services.owncloud.test_username');
         $password = config('services.owncloud.test_app_password');
 
-        if (!$usuario || !$password) {
+        if (! $usuario || ! $password) {
             return ['error' => 'Faltan credenciales de prueba'];
         }
 
-        $respuesta = \Illuminate\Support\Facades\Http::timeout(20)
+        $respuesta = Http::timeout(20)
             ->withBasicAuth($usuario, $password)
             ->withHeaders([
                 'Depth' => '1',
@@ -58,14 +59,14 @@ class OwnCloudService
             ])
             ->withBody(
                 '<?xml version="1.0" encoding="UTF-8"?>'
-                . '<d:propfind xmlns:d="DAV:">'
-                . '<d:prop><d:displayname/><d:resourcetype/>'
-                . '</d:prop></d:propfind>',
+                .'<d:propfind xmlns:d="DAV:">'
+                .'<d:prop><d:displayname/><d:resourcetype/>'
+                .'</d:prop></d:propfind>',
                 'application/xml'
             )
             ->send(
                 'PROPFIND',
-                $url . '/remote.php/dav/files/' . rawurlencode($usuario) . '/'
+                $url.'/remote.php/dav/files/'.rawurlencode($usuario).'/'
             );
 
         return [
@@ -73,38 +74,38 @@ class OwnCloudService
             'conexion_correcta' => $respuesta->status() === 207,
         ];
     }
-        
+
     public function obtenerArchivosPrueba(): array
     {
         $url = rtrim(config('services.owncloud.url'), '/');
         $usuario = config('services.owncloud.test_username');
         $password = config('services.owncloud.test_app_password');
 
-        if (!$usuario || !$password) {
+        if (! $usuario || ! $password) {
             return ['error' => 'Faltan las credenciales de prueba'];
         }
 
-        $ruta = '/remote.php/dav/files/' . rawurlencode($usuario) . '/';
+        $ruta = '/remote.php/dav/files/'.rawurlencode($usuario).'/';
 
-        $respuesta = \Illuminate\Support\Facades\Http::timeout(20)
+        $respuesta = Http::timeout(20)
             ->withBasicAuth($usuario, $password)
             ->withHeaders(['Depth' => '1'])
             ->withBody(
                 '<?xml version="1.0" encoding="UTF-8"?>'
-                . '<d:propfind xmlns:d="DAV:">'
-                . '<d:prop><d:displayname/><d:resourcetype/>'
-                . '</d:prop></d:propfind>',
+                .'<d:propfind xmlns:d="DAV:">'
+                .'<d:prop><d:displayname/><d:resourcetype/>'
+                .'</d:prop></d:propfind>',
                 'application/xml'
             )
-            ->send('PROPFIND', $url . $ruta);
+            ->send('PROPFIND', $url.$ruta);
 
         if ($respuesta->status() !== 207) {
             return ['http_status' => $respuesta->status()];
         }
 
-        $xml = new \DOMDocument();
+        $xml = new \DOMDocument;
 
-        if (!@$xml->loadXML($respuesta->body(), LIBXML_NONET)) {
+        if (! @$xml->loadXML($respuesta->body(), LIBXML_NONET)) {
             return ['error' => 'Respuesta XML no válida'];
         }
 
@@ -151,7 +152,6 @@ class OwnCloudService
         ];
     }
 
-    
     public function obtenerArchivosUsuario(
         string $usuario,
         string $password,
@@ -176,38 +176,38 @@ class OwnCloudService
         }
 
         $ruta = '/remote.php/dav/files/'
-            . rawurlencode($usuario) . '/';
+            .rawurlencode($usuario).'/';
 
         if ($segmentos !== []) {
             $ruta .= implode(
                 '/',
                 array_map('rawurlencode', $segmentos)
-            ) . '/';
+            ).'/';
         }
 
-        $respuesta = \Illuminate\Support\Facades\Http::timeout(20)
+        $respuesta = Http::timeout(20)
             ->withBasicAuth($usuario, $password)
             ->withoutRedirecting()
             ->withHeaders(['Depth' => '1'])
             ->withBody(
                 '<?xml version="1.0" encoding="UTF-8"?>'
-                . '<d:propfind xmlns:d="DAV:">'
-                . '<d:prop><d:displayname/><d:resourcetype/>'
-                . '</d:prop></d:propfind>',
+                .'<d:propfind xmlns:d="DAV:">'
+                .'<d:prop><d:displayname/><d:resourcetype/>'
+                .'</d:prop></d:propfind>',
                 'application/xml'
             )
-            ->send('PROPFIND', $base . $ruta);
+            ->send('PROPFIND', $base.$ruta);
 
         if ($respuesta->status() !== 207) {
             throw new \RuntimeException(
                 'ownCloud respondió con HTTP '
-                . $respuesta->status()
+                .$respuesta->status()
             );
         }
 
-        $xml = new \DOMDocument();
+        $xml = new \DOMDocument;
 
-        if (!@$xml->loadXML($respuesta->body(), LIBXML_NONET)) {
+        if (! @$xml->loadXML($respuesta->body(), LIBXML_NONET)) {
             throw new \RuntimeException('Respuesta XML no válida.');
         }
 
@@ -235,7 +235,7 @@ class OwnCloudService
                 $recurso
             );
 
-            if (!$nombre) {
+            if (! $nombre) {
                 $nombre = basename(rtrim($rutaArchivo, '/'));
             }
 
@@ -248,7 +248,7 @@ class OwnCloudService
                 'nombre' => $nombre,
                 'tipo' => $esCarpeta ? 'carpeta' : 'archivo',
                 'ruta' => ltrim(
-                    $carpeta . '/' . $nombre,
+                    $carpeta.'/'.$nombre,
                     '/'
                 ),
             ];
@@ -261,7 +261,7 @@ class OwnCloudService
         string $usuario,
         string $password,
         string $carpeta,
-        \Illuminate\Http\UploadedFile $archivo
+        UploadedFile $archivo
     ): void {
         $segmentos = $carpeta === ''
             ? []
@@ -285,19 +285,19 @@ class OwnCloudService
         }
 
         $ruta = '/remote.php/dav/files/'
-            . rawurlencode($usuario) . '/';
+            .rawurlencode($usuario).'/';
 
         if ($segmentos !== []) {
             $ruta .= implode(
                 '/',
                 array_map('rawurlencode', $segmentos)
-            ) . '/';
+            ).'/';
         }
 
         $ruta .= rawurlencode($nombre);
 
         $url = rtrim(config('services.owncloud.url'), '/')
-            . $ruta;
+            .$ruta;
 
         $stream = fopen($archivo->getRealPath(), 'rb');
 
@@ -308,7 +308,7 @@ class OwnCloudService
         }
 
         try {
-            $respuesta = \Illuminate\Support\Facades\Http::timeout(120)
+            $respuesta = Http::timeout(120)
                 ->connectTimeout(10)
                 ->withBasicAuth($usuario, $password)
                 ->withoutRedirecting()
@@ -321,10 +321,10 @@ class OwnCloudService
             fclose($stream);
         }
 
-        if (!in_array($respuesta->status(), [201, 204], true)) {
+        if (! in_array($respuesta->status(), [201, 204], true)) {
             throw new \RuntimeException(
                 'ownCloud respondió con HTTP '
-                . $respuesta->status()
+                .$respuesta->status()
             );
         }
     }
@@ -349,11 +349,11 @@ class OwnCloudService
         }
 
         $ruta = '/remote.php/dav/files/'
-            . rawurlencode($usuario) . '/'
-            . implode('/', array_map('rawurlencode', $segmentos));
+            .rawurlencode($usuario).'/'
+            .implode('/', array_map('rawurlencode', $segmentos));
 
         $url = rtrim(config('services.owncloud.url'), '/')
-            . $ruta;
+            .$ruta;
 
         $temporal = tempnam(sys_get_temp_dir(), 'mi_nube_');
 
@@ -364,17 +364,17 @@ class OwnCloudService
         }
 
         try {
-            $respuesta = \Illuminate\Support\Facades\Http::timeout(120)
+            $respuesta = Http::timeout(120)
                 ->connectTimeout(10)
                 ->withBasicAuth($usuario, $password)
                 ->withoutRedirecting()
                 ->withOptions(['sink' => $temporal])
                 ->get($url);
 
-            if (!$respuesta->successful()) {
+            if (! $respuesta->successful()) {
                 throw new \RuntimeException(
                     'ownCloud respondió con HTTP '
-                    . $respuesta->status()
+                    .$respuesta->status()
                 );
             }
 
@@ -384,5 +384,4 @@ class OwnCloudService
             throw $e;
         }
     }
-
 }

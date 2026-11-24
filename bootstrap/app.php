@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Middleware\EsAdmin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -13,11 +15,17 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin' => \App\Http\Middleware\EsAdmin::class,
+            'admin' => EsAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        $exceptions->render(function (PostTooLargeException $e, Request $request) {
+            return redirect()->route('panel')->withErrors([
+                'archivo' => 'El archivo supera el tamaño máximo de subida permitido por el servidor web o PHP en la Raspberry Pi.',
+            ]);
+        });
     })->create();

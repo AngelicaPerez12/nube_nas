@@ -61,6 +61,47 @@
             <p class="text-muted mb-0">Gestiona tus archivos almacenados en la Raspberry Pi 5.</p>
         </div>
 
+        <!-- Tarjeta de Almacenamiento Asignado -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-3 p-md-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="bi bi-hdd-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-2">
+                                <h2 class="h6 fw-bold mb-0">Almacenamiento asignado</h2>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ auth()->user()->limiteEspacioTexto() }}</span>
+                            </div>
+                            <p class="text-muted small mb-0 mt-1">
+                                <i class="bi bi-info-circle me-1 text-primary"></i>Se te ha asignado automáticamente <strong>{{ auth()->user()->limiteEspacioTexto() }}</strong> de almacenamiento personal en la nube.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style="min-width: 260px;">
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>Usado: <strong>{{ auth()->user()->espacioUsadoTexto() }}</strong></span>
+                            <span><strong>{{ auth()->user()->porcentajeUso() }}%</strong></span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar {{ auth()->user()->porcentajeUso() >= 90 ? 'bg-danger' : (auth()->user()->porcentajeUso() >= 75 ? 'bg-warning' : 'bg-primary') }}" 
+                                 role="progressbar" 
+                                 style="width: {{ auth()->user()->porcentajeUso() }}%;" 
+                                 aria-valuenow="{{ auth()->user()->porcentajeUso() }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                        <div class="text-end small text-muted mt-1" style="font-size: 0.75rem;">
+                            Disponible: {{ auth()->user()->formatearBytes(max(0, auth()->user()->limiteEspacioBytes() - auth()->user()->espacioUsadoBytes())) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card border-0 shadow-sm rounded-4">
             <div class="card-body p-4 p-md-5">
 
@@ -109,6 +150,13 @@
                     </div>
                 @endif
 
+                @if (session('eliminado'))
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-trash-fill me-2"></i>{{ session('eliminado') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                    </div>
+                @endif
+
                 @if ($errors->any())
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $errors->first() }}
@@ -133,7 +181,7 @@
                                     <i class="bi bi-upload me-1"></i> Subir
                                 </button>
                             </div>
-                            <div class="form-text">Tamaño máximo permitido: 50 MB.</div>
+                            <div class="form-text">Tamaño máximo permitido: 50 MB por archivo.</div>
                         </form>
                     </div>
                 @else
@@ -188,8 +236,11 @@
                                     <div class="card h-100 border file-card shadow-sm">
                                         <div class="card-body d-flex flex-column justify-content-between">
                                             <div>
-                                                <i class="bi bi-file-earmark-text-fill text-primary fs-1 mb-2 d-block"></i>
-                                                <h6 class="card-title fw-semibold file-title mb-3">{{ $archivo['nombre'] }}</h6>
+                                                <i class="bi {{ $archivo['icono']['icono'] ?? 'bi-file-earmark-fill' }} {{ $archivo['icono']['color'] ?? 'text-secondary' }} fs-1 mb-2 d-block"></i>
+                                                <h6 class="card-title fw-semibold file-title mb-1">{{ $archivo['nombre'] }}</h6>
+                                                @if(!empty($archivo['extension']))
+                                                    <span class="badge bg-light text-muted border text-uppercase" style="font-size: 0.65rem;">{{ $archivo['extension'] }}</span>
+                                                @endif
                                             </div>
 
                                             <div class="d-flex gap-2 pt-2 border-top">
@@ -230,12 +281,32 @@
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Script para evitar ERR_UPLOAD_FILE_CHANGED en navegadores Android -->
+    <!-- Script para evitar ERR_UPLOAD_FILE_CHANGED en navegadores Android y validar límites -->
     <script>
         document.getElementById('formSubida')?.addEventListener('submit', async function (e) {
             const input = document.getElementById('archivo');
             const btn = document.getElementById('btnSubir');
             if (!input || !input.files.length) return;
+
+            const file = input.files[0];
+            const maxArchivoBytes = 50 * 1024 * 1024; // 50 MB por archivo
+            const espacioActual = '{{ $espacio }}';
+            const disponibleBytes = {{ max(0, auth()->user()->limiteEspacioBytes() - auth()->user()->espacioUsadoBytes()) }};
+
+            if (file.size > maxArchivoBytes) {
+                e.preventDefault();
+                const pesoMb = (file.size / (1024 * 1024)).toFixed(1);
+                alert(`El archivo pesa ${pesoMb} MB y supera el tamaño máximo permitido de 50 MB por archivo.`);
+                return;
+            }
+
+            if (espacioActual === 'privado' && file.size > disponibleBytes) {
+                e.preventDefault();
+                const pesoMb = (file.size / (1024 * 1024)).toFixed(1);
+                const dispMb = (disponibleBytes / (1024 * 1024)).toFixed(1);
+                alert(`No tienes suficiente espacio disponible. El archivo pesa ${pesoMb} MB y solo te quedan ${dispMb} MB disponibles.`);
+                return;
+            }
 
             e.preventDefault();
 
@@ -243,8 +314,9 @@
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Subiendo...';
 
+            const panelUrl = '{{ route("panel", ["espacio" => $espacio, "carpeta" => $carpeta]) }}';
+
             try {
-                const file = input.files[0];
                 const buffer = await file.arrayBuffer();
                 const blob = new Blob([buffer], { type: file.type || 'application/octet-stream' });
 
@@ -254,14 +326,30 @@
                 const response = await fetch(this.action, {
                     method: 'POST',
                     body: formData,
-                    credentials: 'same-origin'
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 });
 
-                window.location.href = response.url || window.location.href;
+                const html = await response.text();
+
+                if (html && html.includes('<!DOCTYPE html>')) {
+                    document.open();
+                    document.write(html);
+                    document.close();
+                    if (response.url) {
+                        history.replaceState({}, '', response.url);
+                    }
+                } else if (response.redirected && response.url && !response.url.includes('/archivos/subir')) {
+                    window.location.href = response.url;
+                } else {
+                    window.location.href = panelUrl;
+                }
             } catch (error) {
                 btn.disabled = false;
                 btn.innerHTML = originalHtml;
-                alert('No se pudo completar la subida. Verifica tu conexión e intenta de nuevo.');
+                alert('No se pudo completar la subida. Verifica tu conexión o el tamaño del archivo.');
             }
         });
     </script>

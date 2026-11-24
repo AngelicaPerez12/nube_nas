@@ -63,6 +63,9 @@
                                            name="password"
                                            placeholder="••••••••"
                                            required>
+                                    <button class="btn btn-outline-secondary toggle-password" type="button" data-target="password" title="Mostrar/ocultar contraseña">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
                                 </div>
                             </div>
 
@@ -84,5 +87,20 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', () => {
+                const target = document.getElementById(button.getAttribute('data-target'));
+                if (target) {
+                    const isPassword = target.type === 'password';
+                    target.type = isPassword ? 'text' : 'password';
+                    const icon = button.querySelector('i');
+                    if (icon) {
+                        icon.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

@@ -24,7 +24,7 @@ class AuthController extends Controller
 
         $usuario = User::create([
             'name' => $datos['name'],
-            'email' => $datos['name'] . '@nube.local',
+            'email' => $datos['name'].'@nube.local',
             'password' => Hash::make($datos['password']),
         ]);
 

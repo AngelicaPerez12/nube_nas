@@ -103,7 +103,12 @@
                                 </div>
                                 <div class="col-sm-6">
                                     <label class="form-label small fw-semibold">Contraseña (mín. 5)</label>
-                                    <input type="password" name="password" class="form-control" minlength="5" required>
+                                    <div class="input-group">
+                                        <input type="password" id="admin_password" name="password" class="form-control" minlength="5" required>
+                                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="admin_password" title="Mostrar/ocultar contraseña">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="col-sm-6">
                                     <label class="form-label small fw-semibold">Grupo asignado</label>
@@ -125,6 +130,9 @@
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" name="is_admin" value="1" id="nuevoAdmin">
                                         <label class="form-check-label small" for="nuevoAdmin">Otorgar rol de Administrador</label>
+                                    </div>
+                                    <div class="form-text small mt-1">
+                                        <i class="bi bi-hdd me-1 text-primary"></i>Al crearse, se le asignará automáticamente <strong>1 GB</strong> de almacenamiento personal.
                                     </div>
                                 </div>
                                 <div class="col-12">
@@ -149,6 +157,7 @@
                             <tr>
                                 <th>Usuario</th>
                                 <th>Rol</th>
+                                <th>Almacenamiento</th>
                                 <th>Grupo Asignado</th>
                                 <th>Permiso en Grupo</th>
                                 <th>Admin</th>
@@ -166,6 +175,12 @@
                                         @else
                                             <span class="badge bg-secondary">Usuario</span>
                                         @endif
+                                    </td>
+                                    <td>
+                                        <div class="small fw-semibold">{{ $u->espacioUsadoTexto() }} / {{ $u->limiteEspacioTexto() }}</div>
+                                        <div class="progress mt-1" style="height: 5px; width: 100px;">
+                                            <div class="progress-bar {{ $u->porcentajeUso() >= 90 ? 'bg-danger' : ($u->porcentajeUso() >= 75 ? 'bg-warning' : 'bg-primary') }}" style="width: {{ $u->porcentajeUso() }}%;"></div>
+                                        </div>
                                     </td>
                                     <td>
                                         <select name="grupo_id" form="form-update-{{ $u->id }}" class="form-select form-select-sm">
@@ -221,5 +236,20 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', () => {
+                const target = document.getElementById(button.getAttribute('data-target'));
+                if (target) {
+                    const isPassword = target.type === 'password';
+                    target.type = isPassword ? 'text' : 'password';
+                    const icon = button.querySelector('i');
+                    if (icon) {
+                        icon.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

@@ -22,12 +22,12 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropUnique([
-                'owncloud_username'
+                'owncloud_username',
             ]);
 
             $table->dropColumn([
                 'owncloud_username',
-                'owncloud_app_password'
+                'owncloud_app_password',
             ]);
         });
     }
