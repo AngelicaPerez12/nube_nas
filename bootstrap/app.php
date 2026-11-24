@@ -24,6 +24,15 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $exceptions->render(function (PostTooLargeException $e, Request $request) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'message' => 'El archivo supera el tamaño máximo permitido por PHP o el servidor web en la Raspberry Pi.',
+                    'errors' => [
+                        'archivo' => ['El archivo supera el tamaño máximo de subida permitido por el servidor web o PHP en la Raspberry Pi.'],
+                    ],
+                ], 413);
+            }
+
             return redirect()->route('panel')->withErrors([
                 'archivo' => 'El archivo supera el tamaño máximo de subida permitido por el servidor web o PHP en la Raspberry Pi.',
             ]);

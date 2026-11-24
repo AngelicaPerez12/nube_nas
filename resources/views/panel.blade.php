@@ -168,6 +168,8 @@
 
                 <!-- Formulario para subir archivos (visible solo si tiene permiso de escritura) -->
                 @if ($puedeEscribir)
+                    <div id="alertaAjax" class="d-none"></div>
+
                     <div class="bg-light p-3 p-md-4 rounded-3 border mb-4">
                         <form id="formSubida" action="{{ route('archivos.subir') }}" method="POST" enctype="multipart/form-data">
                             @csrf
@@ -184,6 +186,17 @@
                                 </button>
                             </div>
                             <div class="form-text">Tamaño máximo permitido: 50 MB por archivo.</div>
+
+                            <!-- Barra de progreso en tiempo real -->
+                            <div id="progresoSubida" class="d-none mt-3">
+                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                    <span id="progresoTexto"><span class="spinner-border spinner-border-sm text-primary me-1"></span> Subiendo archivo...</span>
+                                    <span id="progresoPorcentaje" class="fw-bold text-primary">0%</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div id="progresoBarra" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%;"></div>
+                                </div>
+                            </div>
                         </form>
                     </div>
                 @else
@@ -285,17 +298,28 @@
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Script para evitar ERR_UPLOAD_FILE_CHANGED en navegadores Android y validar límites -->
+    <!-- Script con barra de progreso en tiempo real y manejo de errores -->
     <script>
         document.getElementById('formSubida')?.addEventListener('submit', async function (e) {
             const input = document.getElementById('archivo');
             const btn = document.getElementById('btnSubir');
+            const alertBox = document.getElementById('alertaAjax');
+            const progresoBox = document.getElementById('progresoSubida');
+            const progresoBarra = document.getElementById('progresoBarra');
+            const progresoTexto = document.getElementById('progresoTexto');
+            const progresoPorcentaje = document.getElementById('progresoPorcentaje');
+
             if (!input || !input.files.length) return;
 
             const file = input.files[0];
             const maxArchivoBytes = 50 * 1024 * 1024; // 50 MB por archivo
             const espacioActual = '{{ $espacio }}';
             const disponibleBytes = {{ max(0, auth()->user()->limiteEspacioBytes() - auth()->user()->espacioUsadoBytes()) }};
+
+            if (alertBox) {
+                alertBox.className = 'd-none';
+                alertBox.innerHTML = '';
+            }
 
             if (file.size > maxArchivoBytes) {
                 e.preventDefault();
@@ -318,43 +342,104 @@
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Subiendo...';
 
-            const panelUrl = '{{ route("panel", ["espacio" => $espacio, "carpeta" => $carpeta]) }}';
+            if (progresoBox) {
+                progresoBox.classList.remove('d-none');
+                progresoBarra.style.width = '0%';
+                progresoPorcentaje.textContent = '0%';
+                progresoTexto.textContent = 'Iniciando subida...';
+            }
 
-            try {
-                const buffer = await file.arrayBuffer();
-                const blob = new Blob([buffer], { type: file.type || 'application/octet-stream' });
-
-                const formData = new FormData(this);
-                formData.set('archivo', blob, file.name);
-
-                const response = await fetch(this.action, {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'same-origin',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
-                const html = await response.text();
-
-                if (html && html.includes('<!DOCTYPE html>')) {
-                    document.open();
-                    document.write(html);
-                    document.close();
-                    if (response.url) {
-                        history.replaceState({}, '', response.url);
-                    }
-                } else if (response.redirected && response.url && !response.url.includes('/archivos/subir')) {
-                    window.location.href = response.url;
-                } else {
-                    window.location.href = panelUrl;
+            // En Android evitamos ERR_UPLOAD_FILE_CHANGED mediante Blob
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            let payload = file;
+            if (isAndroid) {
+                try {
+                    const buffer = await file.arrayBuffer();
+                    payload = new Blob([buffer], { type: file.type || 'application/octet-stream' });
+                } catch (err) {
+                    payload = file;
                 }
-            } catch (error) {
+            }
+
+            const formData = new FormData(this);
+            formData.set('archivo', payload, file.name);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', this.action, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+            xhr.upload.onprogress = function (event) {
+                if (event.lengthComputable && progresoBox) {
+                    const porcentaje = Math.round((event.loaded / event.total) * 100);
+                    const loadedMb = (event.loaded / (1024 * 1024)).toFixed(1);
+                    const totalMb = (event.total / (1024 * 1024)).toFixed(1);
+
+                    progresoBarra.style.width = porcentaje + '%';
+                    progresoPorcentaje.textContent = porcentaje + '%';
+                    progresoTexto.textContent = `Subiendo: ${loadedMb} MB de ${totalMb} MB`;
+
+                    if (porcentaje >= 100) {
+                        progresoTexto.innerHTML = '<span class="spinner-border spinner-border-sm text-primary me-1"></span> Guardando en el disco NAS...';
+                    }
+                }
+            };
+
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const html = xhr.responseText;
+                    if (html && html.includes('<!DOCTYPE html>')) {
+                        document.open();
+                        document.write(html);
+                        document.close();
+                        if (xhr.responseURL) {
+                            history.replaceState({}, '', xhr.responseURL);
+                        }
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                    if (progresoBox) progresoBox.classList.add('d-none');
+
+                    let mensajeError = 'No se pudo subir el archivo. Intenta de nuevo.';
+                    if (xhr.status === 413) {
+                        mensajeError = 'El archivo supera el tamaño máximo permitido por PHP en la Raspberry Pi (post_max_size / upload_max_filesize).';
+                    } else if (xhr.status === 422) {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            mensajeError = data.errors?.archivo?.[0] || data.message || mensajeError;
+                        } catch (e) {}
+                    } else if (xhr.status === 504 || xhr.status === 408) {
+                        mensajeError = 'Tiempo de espera agotado al transferir el archivo a la Raspberry Pi.';
+                    }
+
+                    if (alertBox) {
+                        alertBox.className = 'alert alert-danger alert-dismissible fade show mb-4';
+                        alertBox.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${mensajeError}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+                        alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } else {
+                        alert(mensajeError);
+                    }
+                }
+            };
+
+            xhr.onerror = function () {
                 btn.disabled = false;
                 btn.innerHTML = originalHtml;
-                alert('No se pudo completar la subida. Verifica tu conexión o el tamaño del archivo.');
-            }
+                if (progresoBox) progresoBox.classList.add('d-none');
+
+                const msg = 'Error de conexión o el servidor cerró la conexión (posible límite de post_max_size en PHP en la Raspberry Pi).';
+                if (alertBox) {
+                    alertBox.className = 'alert alert-danger alert-dismissible fade show mb-4';
+                    alertBox.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+                    alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    alert(msg);
+                }
+            };
+
+            xhr.send(formData);
         });
     </script>
 </body>

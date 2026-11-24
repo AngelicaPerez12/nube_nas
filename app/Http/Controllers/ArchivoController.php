@@ -137,6 +137,8 @@ class ArchivoController extends Controller
             'carpeta' => ['nullable', 'string', 'max:2048'],
             'espacio' => ['nullable', 'in:privado,grupo'],
         ], [
+            'archivo.required' => 'Debes seleccionar un archivo para subir.',
+            'archivo.file' => 'El archivo no se pudo cargar completamente o superó el límite de subida de PHP (upload_max_filesize).',
             'archivo.max' => 'El archivo supera el tamaño máximo permitido de 50 MB por archivo.',
         ]);
 
