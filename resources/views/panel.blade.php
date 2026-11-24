@@ -20,7 +20,9 @@
             box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .08) !important;
         }
         .file-title {
-            word-break: break-word;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -225,7 +227,7 @@
                                         <div class="card-body d-flex flex-column justify-content-between">
                                             <div>
                                                 <i class="bi bi-folder-fill text-warning fs-1 mb-2 d-block"></i>
-                                                <h6 class="card-title fw-semibold file-title mb-1">{{ $archivo['nombre'] }}</h6>
+                                                <h6 class="card-title fw-semibold file-title text-truncate mb-1" title="{{ $archivo['nombre'] }}">{{ $archivo['nombre'] }}</h6>
                                             </div>
                                             <span class="text-muted small mt-2">
                                                 <i class="bi bi-box-arrow-in-right me-1"></i>Abrir carpeta
@@ -236,13 +238,13 @@
                                     <div class="card h-100 border file-card shadow-sm">
                                         <div class="card-body d-flex flex-column justify-content-between">
                                             <div>
-                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
                                                     <i class="bi {{ $archivo['icono']['icono'] ?? 'bi-file-earmark-fill' }} {{ $archivo['icono']['color'] ?? 'text-secondary' }} fs-1"></i>
                                                     @if(!empty($archivo['extension']))
                                                         <span class="badge bg-light text-muted border text-uppercase" style="font-size: 0.65rem;">{{ $archivo['extension'] }}</span>
                                                     @endif
                                                 </div>
-                                                <h6 class="card-title fw-semibold file-title mb-3">{{ $archivo['nombre'] }}</h6>
+                                                <h6 class="card-title fw-semibold file-title text-truncate mb-3" title="{{ $archivo['nombre'] }}">{{ $archivo['nombre'] }}</h6>
                                             </div>
 
                                             <div class="d-flex gap-2 pt-2 border-top">
