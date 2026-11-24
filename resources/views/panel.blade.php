@@ -55,10 +55,10 @@
     </nav>
 
     <!-- Contenido principal -->
-    <main class="container my-5" style="max-width: 1100px;">
-        <div class="mb-4">
-            <h1 class="h3 fw-bold mb-1">¡Bienvenido, {{ auth()->user()->name }}!</h1>
-            <p class="text-muted mb-0">Gestiona tus archivos almacenados en la Raspberry Pi 5.</p>
+    <main class="container mt-3 mb-4" style="max-width: 1100px;">
+        <div class="mb-3">
+            <h1 class="h4 fw-bold mb-1">¡Bienvenido, {{ auth()->user()->name }}!</h1>
+            <p class="text-muted small mb-0">Gestiona tus archivos almacenados en la Raspberry Pi 5.</p>
         </div>
 
         <!-- Tarjeta de Almacenamiento Asignado -->
@@ -236,11 +236,13 @@
                                     <div class="card h-100 border file-card shadow-sm">
                                         <div class="card-body d-flex flex-column justify-content-between">
                                             <div>
-                                                <i class="bi {{ $archivo['icono']['icono'] ?? 'bi-file-earmark-fill' }} {{ $archivo['icono']['color'] ?? 'text-secondary' }} fs-1 mb-2 d-block"></i>
-                                                <h6 class="card-title fw-semibold file-title mb-1">{{ $archivo['nombre'] }}</h6>
-                                                @if(!empty($archivo['extension']))
-                                                    <span class="badge bg-light text-muted border text-uppercase" style="font-size: 0.65rem;">{{ $archivo['extension'] }}</span>
-                                                @endif
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <i class="bi {{ $archivo['icono']['icono'] ?? 'bi-file-earmark-fill' }} {{ $archivo['icono']['color'] ?? 'text-secondary' }} fs-1"></i>
+                                                    @if(!empty($archivo['extension']))
+                                                        <span class="badge bg-light text-muted border text-uppercase" style="font-size: 0.65rem;">{{ $archivo['extension'] }}</span>
+                                                    @endif
+                                                </div>
+                                                <h6 class="card-title fw-semibold file-title mb-3">{{ $archivo['nombre'] }}</h6>
                                             </div>
 
                                             <div class="d-flex gap-2 pt-2 border-top">

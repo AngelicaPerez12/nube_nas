@@ -59,7 +59,7 @@
                 <a href="{{ route('login') }}" class="btn btn-primary btn-lg px-4 fw-semibold">
                     <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar sesión
                 </a>
-                <a href="{{ route('registro') }}" class="btn btn-outline-primary btn-lg px-4 fw-semibold bg-white">
+                <a href="{{ route('registro') }}" class="btn btn-outline-primary btn-lg px-4 fw-semibold">
                     <i class="bi bi-person-plus me-2"></i>Crear cuenta
                 </a>
             @endguest
